@@ -49,6 +49,7 @@
   - [3 types of Commands](#3-types-of-commands)
   - [DDL](#ddl)
   - [Date and Time](#date-and-time)
+  - [To add date](#to-add-date)
   - [CREATE DOMAIN](#create-domain)
   - [SQL Referential Integrity \& Updates](#sql-referential-integrity--updates)
   - [ALTER](#alter-1)
@@ -96,6 +97,7 @@
 - [MUST SEE](#must-see)
   - [How to subtract 30 days from the current date using SQL Server](#how-to-subtract-30-days-from-the-current-date-using-sql-server)
   - [managers with at least five direct reports.](#managers-with-at-least-five-direct-reports)
+  - [The Number of Employees Which Report to Each Employee](#the-number-of-employees-which-report-to-each-employee)
   - [Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".](#write-a-solution-to-report-the-movies-with-an-odd-numbered-id-and-a-description-that-is-not-boring)
   - [Write a solution to find all dates' Id with higher temperatures compared to its previous dates (yesterday).](#write-a-solution-to-find-all-dates-id-with-higher-temperatures-compared-to-its-previous-dates-yesterday)
   - [](#)
@@ -793,6 +795,16 @@ WHERE Country = 'Brazil';
 - Times: ‘hh:mm:ss[.f] ' e.g. '15:00:00'
 - Timestamp: ‘YYYY MM DD hh:mm:ss[.f] ' e.g. ‘1975 05 17 15:00:00'
 
+## To add date
+```sql
+DATE_ADD(date, INTERVAL expr unit)
+```
+
+- date: The starting date
+- expr: The value of the time interval to add
+- unit: The unit of the time interval (e.g., DAY, MONTH, YEAR)
+
+
 ## CREATE DOMAIN
 
 The CREATE DOMAIN command allows you to define your own types that are subsets of built in types:
@@ -1439,6 +1451,7 @@ Primary key should always satisfy a NOT NULL constraint
 
 
 
+
 # MUST SEE
 
 ## How to subtract 30 days from the current date using SQL Server
@@ -1459,14 +1472,21 @@ UNION ALL
 SELECT      DATEADD(YEAR, –1, GETDATE()), 'Previous Year'
 ```
 
-> MySql
+> User Activity for the Past 30 Days I MySql
 ```sql
 with mycte as
 (
 select * from Activity
-where activity_date <= date('2019-07-27') and activity_date >= date_add(date('2019-07-27'), interval -10 day)
+where activity_date <= date('2019-07-27') and activity_date > date_add(date('2019-07-27'), interval -30 day)
 )
-select * from mycte
+select activity_date day, count(distinct user_id) active_users from mycte
+Group by activity_date
+
+-- OR
+SELECT activity_date AS day, COUNT(DISTINCT user_id) AS active_users
+FROM Activity
+WHERE (activity_date > "2019-06-27" AND activity_date <= "2019-07-27")
+GROUP BY activity_date;
 ```
 
 ## managers with at least five direct reports.
@@ -1487,6 +1507,29 @@ FROM Employee AS e
 INNER JOIN Employee AS m ON e.id=m.managerId 
 GROUP BY m.managerId 
 HAVING COUNT(m.managerId) >= 5
+```
+
+## The Number of Employees Which Report to Each Employee
+
+```
++-------------+----------+
+| Column Name | Type     |
++-------------+----------+
+| employee_id | int      |
+| name        | varchar  |
+| reports_to  | int      |
+| age         | int      |
++-------------+----------+
+employee_id is the column with unique values for this table.
+This table contains information about the employees and the id of the manager they report to. Some employees do not report to anyone (reports_to is null). 
+```
+
+```sql
+select mgr.employee_id, mgr.name, COUNT(emp.employee_id) as reports_count, ROUND(AVG(emp.age)) as average_age
+from employees emp join employees mgr
+on emp.reports_to = mgr.employee_id
+group by employee_id
+order by employee_id
 ```
 
 ## Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".
@@ -1843,3 +1886,4 @@ A HAVING clause is like a WHERE clause, but applies only to groups as a whole (t
 - [window func](https://www.youtube.com/watch?v=y1KCM8vbYe4&ab_channel=ColtSteele)
 - [CTE](https://www.youtube.com/watch?v=K1WeoKxLZ5o&ab_channel=AlexTheAnalyst)
 - [correlated subquery](https://www.youtube.com/watch?v=SM9cDMxAeK4&ab_channel=EdredoforLearners)
+- [??](https://stackoverflow.com/questions/78452722/confusion-between-two-sql-queries)
