@@ -98,6 +98,10 @@
   - [How to subtract 30 days from the current date using SQL Server](#how-to-subtract-30-days-from-the-current-date-using-sql-server)
   - [managers with at least five direct reports.](#managers-with-at-least-five-direct-reports)
   - [The Number of Employees Which Report to Each Employee](#the-number-of-employees-which-report-to-each-employee)
+  - [Compare consecutive rows of table](#compare-consecutive-rows-of-table)
+  - [Add a new column and its conditional  value](#add-a-new-column-and-its-conditional--value)
+  - [Add a column with Running aggregate](#add-a-column-with-running-aggregate)
+  - [Summary creation of category](#summary-creation-of-category)
   - [Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".](#write-a-solution-to-report-the-movies-with-an-odd-numbered-id-and-a-description-that-is-not-boring)
   - [Write a solution to find all dates' Id with higher temperatures compared to its previous dates (yesterday).](#write-a-solution-to-find-all-dates-id-with-higher-temperatures-compared-to-its-previous-dates-yesterday)
   - [](#)
@@ -1531,6 +1535,165 @@ on emp.reports_to = mgr.employee_id
 group by employee_id
 order by employee_id
 ```
+
+## Compare consecutive rows of table
+
+```
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| id          | int     |
+| num         | varchar |
++-------------+---------+
+In SQL, id is the primary key for this table.
+id is an autoincrement column.
+ 
+
+Find all numbers that appear at least three times consecutively.
+```
+
+> LEAD and LAG
+```sql
+Approach 1 -Using Joins
+SELECT DISTINCT l1.num AS ConsecutiveNums
+FROM Logs l1
+JOIN Logs l2 ON l1.id = l2.id - 1
+JOIN Logs l3 ON l1.id = l3.id - 2
+WHERE l1.num = l2.num AND l2.num = l3.num;
+```
+
+```sql
+#Approach 2-Using LAG and LEAD
+WITH temporary_table(num, next_num, prev_num) AS (
+    SELECT 
+        num, 
+        LEAD(num, 1, 0) OVER (ORDER BY id ASC) AS next_num,
+        LAG(num, 1, 0) OVER (ORDER BY id ASC) AS prev_num 
+    FROM Logs
+)
+
+SELECT DISTINCT num AS ConsecutiveNums 
+FROM temporary_table 
+WHERE num = next_num AND num = prev_num;
+```
+
+## Add a new column and its conditional  value
+
+> Report for every three line segments whether they can form a triangle.
+```sql
+select x, y, z, 
+case 
+when
+x+y > z and x+z > y and y+z > x
+then 'Yes'
+else 'No'
+end
+As triangle
+from Triangle;
+
+
+SELECT *, IF(x+y>z and y+z>x and z+x>y, "Yes", "No") as triangle FROM Triangle
+```
+
+## Add a column with Running aggregate
+
+> Last Person to Fit in the Bus
+
+```sql
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| person_id   | int     |
+| person_name | varchar |
+| weight      | int     |
+| turn        | int     |
++-------------+---------+
+person_id column contains unique values.
+This table has the information about all people waiting for a bus.
+The person_id and turn columns will contain all numbers from 1 to n, where n is the number of rows in the table.
+turn determines the order of which the people will board the bus, where turn=1 denotes the first person to board and turn=n denotes the last person to board.
+weight is the weight of the person in kilograms.
+```
+
+```sql
+with running_weight as(
+            select *,
+                SUM(weight) OVER(order by turn) as running_wt
+            from Queue
+) select person_name
+  from running_weight
+  where running_wt <= 1000
+  order by running_wt desc
+  limit 1;
+```
+
+## Summary creation of category
+
+```
++-------------+------+
+| Column Name | Type |
++-------------+------+
+| account_id  | int  |
+| income      | int  |
++-------------+------+
+account_id is the primary key (column with unique values) for this table.
+Each row contains information about the monthly income for one bank account.
+ 
+
+Write a solution to calculate the number of bank accounts for each salary category. The salary categories are:
+
+"Low Salary": All the salaries strictly less than $20000.
+"Average Salary": All the salaries in the inclusive range [$20000, $50000].
+"High Salary": All the salaries strictly greater than $50000.
+The result table must contain all three categories. If there are no accounts in a category, return 0.
+
+Return the result table in any order.
+```
+
+
+> Wrong Code: BC if there is no salary in the given category then there won't be that category in the summary table
+```sql
+with mycte as
+(
+select *,
+case
+when income < 20000 then "Low Salary"
+when income >= 20000 and income <=50000 then "Average Salary"
+else "High Salary"
+end AS category
+from Accounts
+)
+select category, count(*) as accounts_count
+from mycte group by category
+```
+
+> Correct Code
+
+```sql
+# Write your MySQL query statement below
+SELECT 
+    'Low Salary' AS category,
+    SUM(income < 20000) AS accounts_count
+FROM 
+    Accounts
+
+UNION 
+
+    SELECT 
+        'Average Salary' AS category,
+        SUM(income BETWEEN 20000 AND 50000 ) AS accounts_count
+    FROM 
+        Accounts
+
+UNION
+
+    SELECT 
+        'High Salary' AS category,
+        SUM(income > 50000) AS accounts_count
+    FROM 
+        Accounts;
+```
+
 
 ## Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".
 
