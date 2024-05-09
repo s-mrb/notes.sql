@@ -94,6 +94,7 @@
   - [Relational Data Model](#relational-data-model)
   - [Relational Constraints](#relational-constraints)
 - [MUST SEE](#must-see)
+  - [How to subtract 30 days from the current date using SQL Server](#how-to-subtract-30-days-from-the-current-date-using-sql-server)
   - [managers with at least five direct reports.](#managers-with-at-least-five-direct-reports)
   - [Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".](#write-a-solution-to-report-the-movies-with-an-odd-numbered-id-and-a-description-that-is-not-boring)
   - [Write a solution to find all dates' Id with higher temperatures compared to its previous dates (yesterday).](#write-a-solution-to-find-all-dates-id-with-higher-temperatures-compared-to-its-previous-dates-yesterday)
@@ -1439,6 +1440,34 @@ Primary key should always satisfy a NOT NULL constraint
 
 
 # MUST SEE
+
+## How to subtract 30 days from the current date using SQL Server
+
+```sql
+SELECT      GETDATE(), 'Today'
+UNION ALL
+SELECT      DATEADD(DAY,  10, GETDATE()), '10 Days Later'
+UNION ALL
+SELECT      DATEADD(DAY, –10, GETDATE()), '10 Days Earlier'
+UNION ALL
+SELECT      DATEADD(MONTH,  1, GETDATE()), 'Next Month'
+UNION ALL
+SELECT      DATEADD(MONTH, –1, GETDATE()), 'Previous Month'
+UNION ALL
+SELECT      DATEADD(YEAR,  1, GETDATE()), 'Next Year'
+UNION ALL
+SELECT      DATEADD(YEAR, –1, GETDATE()), 'Previous Year'
+```
+
+> MySql
+```sql
+with mycte as
+(
+select * from Activity
+where activity_date <= date('2019-07-27') and activity_date >= date_add(date('2019-07-27'), interval -10 day)
+)
+select * from mycte
+```
 
 ## managers with at least five direct reports.
 
