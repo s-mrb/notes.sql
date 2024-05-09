@@ -1813,3 +1813,4 @@ A HAVING clause is like a WHERE clause, but applies only to groups as a whole (t
 - [exam q2 stack](https://stackoverflow.com/questions/62356006/sql-count-more-than-average-having-vs-where)
 - [window func](https://www.youtube.com/watch?v=y1KCM8vbYe4&ab_channel=ColtSteele)
 - [CTE](https://www.youtube.com/watch?v=K1WeoKxLZ5o&ab_channel=AlexTheAnalyst)
+- [correlated subquery](https://www.youtube.com/watch?v=SM9cDMxAeK4&ab_channel=EdredoforLearners)
