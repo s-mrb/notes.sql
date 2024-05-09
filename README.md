@@ -482,6 +482,12 @@ SELECT * INTO newtable
 FROM oldtable
 WHERE 1 = 0;
 ```
+> NOTE the difference
+
+```sql
+BACKUP DATABASE databasename
+TO DISK = 'filepath';
+```
 
 ## INSERT INTO
 
@@ -596,6 +602,9 @@ ALTER TABLE table_name
 RENAME COLUMN old_name to new_name;
 ```
 
+```sql
+RENAME TABLE old_table_name TO new_table_name;
+```
 
 ### TRUNCATE
 
@@ -1413,16 +1422,16 @@ The extension of a relation is the set of tuples currently in the relation.
 
 ## Relational Constraints
 
-Domain Constraint
+> Domain Constraint
 Atomic and single value from the domain dom(A)
 
-Key Constraint
+> Key Constraint
 A key that allows to uniquely identify its tuples
 
-Entity Integrity Constraint
+> Entity Integrity Constraint
 Primary key should always satisfy a NOT NULL constraint
 
-Referential Integrity Constraint
+> Referential Integrity Constraint
 - A foreign key FK has the same domain as the primary key PK attribute type(s) it refers to.
 - Either occurs as a value of PK or NULL
 
@@ -1802,3 +1811,5 @@ A HAVING clause is like a WHERE clause, but applies only to groups as a whole (t
 - [leetcode must try](https://leetcode.com/problems/percentage-of-users-attended-a-contest/?envType=study-plan-v2&envId=top-sql-50)
 - [exam q1 stack](https://stackoverflow.com/questions/66019044/how-to-find-the-product-with-the-maximum-discount-using-sql-on-hackerrank)
 - [exam q2 stack](https://stackoverflow.com/questions/62356006/sql-count-more-than-average-having-vs-where)
+- [window func](https://www.youtube.com/watch?v=y1KCM8vbYe4&ab_channel=ColtSteele)
+- [CTE](https://www.youtube.com/watch?v=K1WeoKxLZ5o&ab_channel=AlexTheAnalyst)
