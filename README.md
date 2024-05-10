@@ -101,12 +101,16 @@
   - [Compare consecutive rows of table](#compare-consecutive-rows-of-table)
   - [Add a new column and its conditional  value](#add-a-new-column-and-its-conditional--value)
   - [Add a column with Running aggregate](#add-a-column-with-running-aggregate)
+  - [FETCH AND OFFSET](#fetch-and-offset)
+    - [Conditional rendering of values of a column](#conditional-rendering-of-values-of-a-column)
+  - [Delete Duplicate Emails](#delete-duplicate-emails)
   - [Summary creation of category](#summary-creation-of-category)
   - [Write a solution to report the movies with an odd-numbered ID and a description that is not "boring".](#write-a-solution-to-report-the-movies-with-an-odd-numbered-id-and-a-description-that-is-not-boring)
   - [Write a solution to find all dates' Id with higher temperatures compared to its previous dates (yesterday).](#write-a-solution-to-find-all-dates-id-with-higher-temperatures-compared-to-its-previous-dates-yesterday)
   - [](#)
   - [NOTE](#note)
   - [Note](#note-1)
+  - [Order By with CASE](#order-by-with-case)
   - [VV IMP](#vv-imp)
   - [VV IMP: CASE IN SELECT](#vv-imp-case-in-select)
   - [query quality](#query-quality)
@@ -121,6 +125,15 @@
   - [What are the differences between PRIMARY, UNIQUE, INDEX and FULLTEXT when creating MySQL tables?](#what-are-the-differences-between-primary-unique-index-and-fulltext-when-creating-mysql-tables)
     - [Differences](#differences)
     - [Similarities](#similarities)
+- [functions](#functions)
+  - [SUBSTRING](#substring)
+  - [LEAD and LAG](#lead-and-lag)
+- [WINDOW FUNCTIONS](#window-functions-1)
+  - [Link](#link)
+  - [Dataset](#dataset)
+  - [Questions and Solutions](#questions-and-solutions)
+    - [Rank Rentals by Price](#rank-rentals-by-price)
+    - [Find 2nd Giftcard-Purchasing Customer](#find-2nd-giftcard-purchasing-customer)
 - [Links](#links)
 
 
@@ -1627,6 +1640,78 @@ with running_weight as(
   limit 1;
 ```
 
+## FETCH AND OFFSET
+
+> Second highest salary
+
+```
++-------------+------+
+| Column Name | Type |
++-------------+------+
+| id          | int  |
+| salary      | int  |
++-------------+------+
+id is the primary key (column with unique values) for this table.
+Each row of this table contains information about the salary of an employee.
+```
+
+```sql
+select salary as SecondHighestSalary from Employee
+order by salary desc
+offset 1 ROW
+fetch next 1 rows only
+```
+
+
+
+
+> Without offset
+
+```sql
+/* Write your T-SQL query statement below */
+select max(salary) SecondHighestSalary from Employee where salary <> (select max(salary) from employee)
+```
+
+### Conditional rendering of values of a column
+
+```sql
+SELECT 
+    IF(
+        (SELECT COUNT(*) FROM employee) = 1,
+        NULL,
+        (
+            SELECT 
+                DISTINCT salary 
+            FROM 
+                employee
+            WHERE salary < (SELECT MAX(salary) FROM employee)
+            ORDER BY salary DESC
+            LIMIT 1
+        )
+    )AS SecondHighestSalary;
+
+```
+
+## Delete Duplicate Emails
+
+```
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| id          | int     |
+| email       | varchar |
++-------------+---------+
+id is the primary key (column with unique values) for this table.
+Each row of this table contains an email. The emails will not contain uppercase letters.
+```
+
+```sql
+DELETE p1 FROM Person p1,
+    Person p2
+WHERE
+    p1.Email = p2.Email AND p1.Id > p2.Id
+```
+
 ## Summary creation of category
 
 ```
@@ -1789,7 +1874,8 @@ Select name from world
 Where 
 name like '%a' 
 OR 
-name like '%l'```
+name like '%l'
+```
 
 ## Order By with CASE
 
@@ -1906,6 +1992,7 @@ query_name;```
 ## XOR
 
 Show the countries that are big by area (more than 3 million) or big by population (more than 250 million) but not both
+
 ```sql
 SELECT name
     , population
@@ -2034,7 +2121,87 @@ A HAVING clause is like a WHERE clause, but applies only to groups as a whole (t
 
  - With the exception of FULLTEXT, the column order is significant: for the index to be useful in a query, the query must use columns from the index starting from the left - it can't use just the second, third or fourth part of an index, unless it is also using the previous columns in the index to match static values.  (For a FULLTEXT index to be useful to a query, the query must use *all* columns of the index.)
 
+# functions
 
+## SUBSTRING
+
+```sql
+SUBSTRING(string, start, length)
+
+-- length
+-- The start position. The first position in string is 1
+```
+
+## LEAD and LAG
+
+```
+LEAD(expr, N, default) 
+          OVER (Window_specification | Window_name)
+```
+
+- **expr**: It can be a column or any built-in function.
+- **N**: It is a positive value which determine number of rows preceding/succeeding the current row. If it is omitted in query then its default value is 1.
+- **default**: It is the default value return by function in-case no row precedes/succeedes the current row by N rows. If it is missing then it is by default NULL.
+- **OVER()**: It defines how rows are partitioned into groups. If OVER() is empty then function compute result using all rows.
+- **Window_specification**: It consist of query partition clause which determines how the query rows are partitioned and ordered.
+- **Window_name**: If window is specified elsewhere in the query then it is referenced using this Window_name.
+
+
+
+# WINDOW FUNCTIONS 
+
+## Link
+- [sql](https://learnsql.com/blog/sql-window-functions-practice-exercises/)
+
+## Dataset
+- The `customer` table stores information on all registered customers. The columns are `id`, `first_name`, `last_name`, `join_date`, and `country`.
+- The `movie` table contains records of all movies available in the store. The columns are `id`, `title`, `release_year`, `genre`, and `editor_ranking`.
+- The `review` table stores customer ratings of the movies. The columns are `id`, `rating`, `customer_id` (references the `customer` table), and `movie_id` (references the `movie` table).
+- The `single_rental` table stores information about movies that were rented for a certain period of time by customers. The columns are `id`, `rental_date`, `rental_period`, `platform`, `customer_id` (references the `customer` table), `movie_id` (references the `movie` table), `payment_date`, and `payment_amount`.
+- The `subscription` table stores records for all customers who subscribed to the store. The columns are `id`, `length` (in days), `start_date`, `platform`, `payment_date`, `payment_amount`, and `customer_id` (references the `customer` table).
+- The `giftcard` table contains information about purchased gift cards. The columns are `id`, `amount_worth`, `customer_id` (references the `customer` table), `payment_date`, and `payment_amount`.
+
+## Questions and Solutions
+
+### Rank Rentals by Price
+For each single rental, show the `rental_date`, the title of the movie rented, its genre, the payment amount, and the rank of the rental in terms of the price paid (the most expensive rental should have rank = 1). The ranking should be created separately for each movie genre. Allow the same rank for multiple rows and allow gaps in numbering.
+
+```sql
+SELECT
+  rental_date,
+  title,
+  genre,
+  payment_amount,
+  RANK() OVER(PARTITION BY genre ORDER BY payment_amount DESC)
+FROM movie
+JOIN single_rental
+  ON single_rental.movie_id = movie.id;
+```
+
+> As the ranking should be created separately for each movie genre, in the OVER() clause, we partition the data by the genre column.
+
+### Find 2nd Giftcard-Purchasing Customer
+Show the first and last name of the customer who bought the second most-recent gift card, along with the date when the payment took place. Assume that a unique rank is assigned for each gift card purchase.
+
+```sql
+WITH ranking AS (
+  SELECT
+    first_name,
+    last_name,
+    payment_date,
+    ROW_NUMBER() OVER(ORDER BY payment_date DESC) AS rank
+  FROM customer
+  JOIN giftcard
+    ON customer.id = giftcard.customer_id
+)
+ 
+SELECT
+  first_name,
+  last_name,
+  payment_date
+FROM ranking
+WHERE rank = 2;
+```
 
 # Links
 - [using NULL sqlzoo](https://sqlzoo.net/wiki/Using_Null)
@@ -2050,3 +2217,4 @@ A HAVING clause is like a WHERE clause, but applies only to groups as a whole (t
 - [CTE](https://www.youtube.com/watch?v=K1WeoKxLZ5o&ab_channel=AlexTheAnalyst)
 - [correlated subquery](https://www.youtube.com/watch?v=SM9cDMxAeK4&ab_channel=EdredoforLearners)
 - [??](https://stackoverflow.com/questions/78452722/confusion-between-two-sql-queries)
+  - [??](https://www.sisense.com/blog/everything-about-group-by/)
