@@ -114,6 +114,8 @@
   - [VV IMP](#vv-imp)
   - [VV IMP: CASE IN SELECT](#vv-imp-case-in-select)
   - [query quality](#query-quality)
+- [Example](#example)
+  - [XOR](#xor)
   - [Order By Multiple Cols](#order-by-multiple-cols)
   - [Bypass Null](#bypass-null)
   - [List each continent and the name of the country that comes first alphabetically.](#list-each-continent-and-the-name-of-the-country-that-comes-first-alphabetically)
@@ -131,9 +133,14 @@
 - [WINDOW FUNCTIONS](#window-functions-1)
   - [Link](#link)
   - [Dataset](#dataset)
-  - [Questions and Solutions](#questions-and-solutions)
     - [Rank Rentals by Price](#rank-rentals-by-price)
     - [Find 2nd Giftcard-Purchasing Customer](#find-2nd-giftcard-purchasing-customer)
+    - [Calculate Running Total for Payments](#calculate-running-total-for-payments)
+  - [Dataset](#dataset-1)
+    - [Calculate Moving Average for Scores](#calculate-moving-average-for-scores)
+    - [Find the Difference Between Procedure Prices](#find-the-difference-between-procedure-prices)
+    - [Find the Difference Between the Current and Best Prices](#find-the-difference-between-the-current-and-best-prices)
+    - [Find the Best Doctor per Procedure](#find-the-best-doctor-per-procedure)
 - [Links](#links)
 
 
@@ -1712,6 +1719,13 @@ WHERE
     p1.Email = p2.Email AND p1.Id > p2.Id
 ```
 
+```sql
+delete from cars
+where model_id not in (select min(model_id)
+					  from cars
+					  group by model_name, brand);
+```
+
 ## Summary creation of category
 
 ```
@@ -1971,7 +1985,8 @@ from
 queries
 where query_name is  not null
 group by
-query_name;```
+query_name;
+```
 
 
 
@@ -2161,7 +2176,6 @@ LEAD(expr, N, default)
 - The `subscription` table stores records for all customers who subscribed to the store. The columns are `id`, `length` (in days), `start_date`, `platform`, `payment_date`, `payment_amount`, and `customer_id` (references the `customer` table).
 - The `giftcard` table contains information about purchased gift cards. The columns are `id`, `amount_worth`, `customer_id` (references the `customer` table), `payment_date`, and `payment_amount`.
 
-## Questions and Solutions
 
 ### Rank Rentals by Price
 For each single rental, show the `rental_date`, the title of the movie rented, its genre, the payment amount, and the rank of the rental in terms of the price paid (the most expensive rental should have rank = 1). The ranking should be created separately for each movie genre. Allow the same rank for multiple rows and allow gaps in numbering.
@@ -2202,6 +2216,135 @@ SELECT
 FROM ranking
 WHERE rank = 2;
 ```
+### Calculate Running Total for Payments
+For each single rental, show the id, rental_date, payment_amount and the running total of payment_amounts of all rentals from the oldest one (in terms of rental_date) to the current row.
+
+```sql
+SELECT
+  id,
+  rental_date,
+  payment_amount,
+  SUM(payment_amount) OVER(
+    ORDER BY rental_date
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+FROM single_rental;
+```
+
+First, we select information about each single rental from the single_rental table.
+
+Next, we are going to find the running total of payment amounts of all rentals using the SUM() function (which takes the payment_amount column as its argument) with the OVER() clause. Here is an article explaining the details about running total and how to compute it in SQL.
+
+The instruction says to find the running total from the oldest rental date until the current row date. So, in the OVER() clause, we need to order the data by the rental_date column and then define ROWS to be counted in the running total, from the oldest date (BETWEEN UNBOUNDED PRECEDING) until the current date (AND CURRENT ROW).
+
+## Dataset
+- The `doctor` table stores information about doctors. The columns are `id`, `first_name`, `last_name`, and `age`.
+- The `procedure` table contains information about procedures performed by doctors on patients. The columns are `id`, `procedure_date`, `doctor_id` (references the doctor table), `patient_id`, `category`, `name`, `price`, and `score`.
+
+### Calculate Moving Average for Scores
+For each procedure, show the following information: procedure_date, doctor_id, category, name, score and the average score from the procedures in the same category which are included in the following window frame: the two previous rows, the current row, and the three following rows in terms of the procedure date.
+
+
+
+```sql
+SELECT
+  procedure_date,
+  doctor_id,
+  category,
+  name,
+  score,
+  AVG(score) OVER(
+    PARTITION BY category
+    ORDER BY procedure_date
+    ROWS BETWEEN 2 PRECEDING AND 3 FOLLOWING)
+FROM procedure;
+```
+
+### Find the Difference Between Procedure Prices
+For each procedure, show the following information: id, procedure_date, name, price, price of the previous procedure (in terms of the id) and the difference between these two values. Name the last two columns previous_price and difference.
+
+```sql
+SELECT
+  id,
+  procedure_date,
+  name,
+  price,
+  LAG(price) OVER(ORDER BY id) AS previous_price,
+  price - LAG(price) OVER(ORDER BY id) AS difference
+FROM procedure;
+```
+
+### Find the Difference Between the Current and Best Prices
+For each procedure, show the:
+
+procedure_date
+name
+price
+category
+score
+Price of the best procedure (in terms of the score) from the same category (column best_procedure).
+Difference between this price and the best_procedure (column difference)
+
+```sql
+SELECT
+  procedure_date,
+  name,
+  price,
+  category,
+  score,
+  FIRST_VALUE(price) OVER(PARTITION BY category ORDER BY score DESC)
+     AS best_procedure,
+  price - FIRST_VALUE(price) OVER(PARTITION BY category
+     ORDER BY score DESC) AS difference
+FROM procedure;
+```
+
+We start by selecting information about each procedure from the procedure table.
+
+The next step is to find the price of the best procedure. We use the `FIRST_VALUE()` function, which returns the first value in an ordered partition of a result set. To get the price of the best procedure from the same category, we must partition the dataset by the category column. And to get the price of the best procedure in terms of score, we must order the dataset by the score column in descending order. We alias this expression as best_procedure.
+
+Lastly, we find the difference between price and best_procedure by subtracting the `FIRST_VALUE()` function from the price column.
+
+### Find the Best Doctor per Procedure
+Find out which doctor is the best at each procedure. For each procedure, select the procedure name and the first and last name of all doctors who got high scores (higher than or equal to the average score for this procedure). Rank the doctors per procedure in terms of the number of times they performed this procedure. Then, show the best doctors for each procedure, i.e. those having a rank of 1.
+
+```sql
+WITH cte AS (
+  SELECT
+    name,
+    first_name,
+    last_name,
+    COUNT(*) c,
+    RANK() OVER(PARTITION BY name ORDER BY count(*) DESC) AS rank
+  FROM procedure p
+  JOIN doctor d
+    ON p.doctor_id = d.id
+  WHERE score >= (SELECT avg(score)
+                  FROM procedure pl
+                  WHERE pl.name = p.name)
+  GROUP BY name, first_name, last_name
+)
+ 
+SELECT
+  name,
+  first_name,
+  last_name
+FROM cte
+WHERE rank = 1;
+```
+
+First, we select the procedure name and information about doctors, so we join the procedure table with the doctor table on their common column (doctor_id).
+
+We want to select all doctors who got high scores (higher than or equal to the average score for this procedure). To do that, we define the WHERE clause condition for the score column. The score column must store a value equal to or greater than the average score for the current row’s procedure.
+
+Let's rank the doctors per procedure. We'll use the RANK() function with the OVER() clause, where we partition the dataset by the procedure name. Additionally, we must rank in terms of the number of times the doctor performed this procedure. To get the number of times the doctor performed this procedure, we must COUNT(*) while grouping by the procedure name and the first and last name of the doctor (that is, we are grouping by all columns listed in the SELECT statement).
+
+All we’ve done until now is define a Common Table Expression (CTE), which is the inner SELECT statement enclosed by the WITH clause and named cte.
+
+
+Now we select the relevant columns from this CTE. To get the best doctors for each procedure (those having a rank of 1), we define the WHERE clause with the condition for the rank column.
+
+Why do we need to define a CTE and then query it? Because we cannot use the rank column in the WHERE clause of the inner SELECT. The reason is the order of execution, which is: FROM, JOINs, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, and LIMIT. The rank column has not been defined when the WHERE clause is executed.
+
 
 # Links
 - [using NULL sqlzoo](https://sqlzoo.net/wiki/Using_Null)
@@ -2218,3 +2361,4 @@ WHERE rank = 2;
 - [correlated subquery](https://www.youtube.com/watch?v=SM9cDMxAeK4&ab_channel=EdredoforLearners)
 - [??](https://stackoverflow.com/questions/78452722/confusion-between-two-sql-queries)
   - [??](https://www.sisense.com/blog/everything-about-group-by/)
+- [Running Total](https://stackoverflow.com/questions/30861919/what-is-rows-unbounded-preceding-used-for-in-teradata)
