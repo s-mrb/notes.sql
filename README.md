@@ -1047,7 +1047,8 @@ GROUP BY column_name(s)
 HAVING condition
 ORDER BY column_name(s)
 LIMIT
-OFFSET;
+OFFSET
+[FETCH FIRST | do same as limit];
 ```
 
 ## Drop 
